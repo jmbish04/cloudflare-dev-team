@@ -1,0 +1,875 @@
+openapi: 3.1.0
+info:
+  title: MCP Orchestrator API
+  description: A comprehensive software development lifecycle management system
+  version: 1.0.0
+  contact:
+    name: MCP Orchestrator Team
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://mcp-orchestrator.workers.dev
+    description: Production server
+  - url: https://mcp-orchestrator-staging.workers.dev
+    description: Staging server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the service and its dependencies
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /projects:
+    get:
+      summary: List projects
+      description: Retrieve a paginated list of projects
+      operationId: listProjects
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          description: Filter by project status
+          schema:
+            $ref: '#/components/schemas/ProjectStatus'
+        - name: search
+          in: query
+          description: Search projects by name or description
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create project
+      description: Create a new project
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /projects/{id}:
+    get:
+      summary: Get project
+      description: Retrieve a specific project by ID
+      operationId: getProject
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update project
+      description: Update an existing project
+      operationId: updateProject
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        '200':
+          description: Project updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete project
+      description: Delete a project and all associated data
+      operationId: deleteProject
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '204':
+          description: Project deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /projects/{id}/documents:
+    get:
+      summary: List project documents
+      description: Retrieve documents for a specific project
+      operationId: listProjectDocuments
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: type
+          in: query
+          description: Filter by document type
+          schema:
+            $ref: '#/components/schemas/DocumentType'
+        - name: status
+          in: query
+          description: Filter by document status
+          schema:
+            $ref: '#/components/schemas/DocumentStatus'
+      responses:
+        '200':
+          description: List of project documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create document
+      description: Create a new document for a project
+      operationId: createDocument
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentRequest'
+      responses:
+        '201':
+          description: Document created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /projects/{id}/tasks:
+    get:
+      summary: List project tasks
+      description: Retrieve tasks for a specific project
+      operationId: listProjectTasks
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          description: Filter by task status
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+        - name: type
+          in: query
+          description: Filter by task type
+          schema:
+            $ref: '#/components/schemas/TaskType'
+        - name: assignee_agent
+          in: query
+          description: Filter by assigned agent
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of project tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasksResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create task
+      description: Create a new task for a project
+      operationId: createTask
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orchestrations/idea-to-docs:
+    post:
+      summary: Generate documents from idea
+      description: Create a project and generate documentation from an idea
+      operationId: ideaToDocs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdeaToDocsRequest'
+      responses:
+        '202':
+          description: Documentation generation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrchestrationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orchestrations/doc-to-tasks:
+    post:
+      summary: Generate tasks from document
+      description: Analyze a document and break it down into development tasks
+      operationId: docToTasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocToTasksRequest'
+      responses:
+        '202':
+          description: Task generation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrchestrationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ci/github/pull-from-r2:
+    post:
+      summary: Sync code from R2 to GitHub
+      description: Trigger synchronization of code from R2 storage to GitHub repository
+      operationId: pullFromR2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GitHubSyncRequest'
+      responses:
+        '202':
+          description: Sync operation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrchestrationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ProjectId:
+      name: id
+      in: path
+      required: true
+      description: Project ID
+      schema:
+        type: string
+        format: uuid
+
+    Page:
+      name: page
+      in: query
+      description: Page number (1-based)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    Limit:
+      name: limit
+      in: query
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+
+  schemas:
+    # Core entities
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        r2_bucket:
+          type: string
+        github_repo_url:
+          type: string
+          nullable: true
+        google_docs_folder_id:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - slug
+        - status
+        - r2_bucket
+        - created_at
+        - updated_at
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/DocumentType'
+        title:
+          type: string
+        google_doc_id:
+          type: string
+          nullable: true
+        google_doc_url:
+          type: string
+          nullable: true
+        r2_key:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/DocumentStatus'
+        version:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - project_id
+        - type
+        - title
+        - status
+        - version
+        - created_at
+        - updated_at
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+          nullable: true
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        type:
+          $ref: '#/components/schemas/TaskType'
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 5
+        dependencies:
+          type: array
+          items:
+            type: string
+            format: uuid
+        github_pr_url:
+          type: string
+          nullable: true
+        assignee_agent:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - project_id
+        - title
+        - status
+        - priority
+        - created_at
+        - updated_at
+
+    # Enums
+    ProjectStatus:
+      type: string
+      enum: [planning, development, deployed]
+
+    DocumentType:
+      type: string
+      enum: [prd, tad, ux_design, spec]
+
+    DocumentStatus:
+      type: string
+      enum: [draft, review, approved, published]
+
+    TaskType:
+      type: string
+      enum: [frontend, backend, database, devops, testing, documentation]
+
+    TaskStatus:
+      type: string
+      enum: [todo, in_progress, review, done]
+
+    # Request schemas
+    CreateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          pattern: "^[a-z0-9-]+$"
+          minLength: 1
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+      required:
+        - name
+        - slug
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        github_repo_url:
+          type: string
+        google_docs_folder_id:
+          type: string
+
+    CreateDocumentRequest:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/DocumentType'
+        title:
+          type: string
+          minLength: 1
+        google_doc_id:
+          type: string
+        google_doc_url:
+          type: string
+        status:
+          $ref: '#/components/schemas/DocumentStatus'
+      required:
+        - type
+        - title
+
+    CreateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/TaskType'
+        parent_id:
+          type: string
+          format: uuid
+        assignee_agent:
+          type: string
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 5
+      required:
+        - title
+
+    IdeaToDocsRequest:
+      type: object
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        idea:
+          type: string
+          minLength: 10
+        project_name:
+          type: string
+        project_description:
+          type: string
+        document_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentType'
+          default: [prd, tad]
+      required:
+        - idea
+
+    DocToTasksRequest:
+      type: object
+      properties:
+        document_id:
+          type: string
+          format: uuid
+        breakdown_strategy:
+          type: string
+          enum: [simple, detailed, epic]
+          default: detailed
+      required:
+        - document_id
+
+    GitHubSyncRequest:
+      type: object
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        ref:
+          type: string
+          default: main
+        commit_message:
+          type: string
+      required:
+        - project_id
+
+    # Response schemas
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        services:
+          type: object
+          properties:
+            database:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+            storage:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+            queue:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+          required:
+            - database
+            - storage
+            - queue
+      required:
+        - status
+        - timestamp
+        - version
+        - services
+
+    ProjectResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Project'
+        request_id:
+          type: string
+      required:
+        - data
+        - request_id
+
+    ProjectsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        request_id:
+          type: string
+      required:
+        - data
+        - pagination
+        - request_id
+
+    DocumentResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Document'
+        request_id:
+          type: string
+      required:
+        - data
+        - request_id
+
+    DocumentsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        request_id:
+          type: string
+      required:
+        - data
+        - pagination
+        - request_id
+
+    TaskResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Task'
+        request_id:
+          type: string
+      required:
+        - data
+        - request_id
+
+    TasksResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        request_id:
+          type: string
+      required:
+        - data
+        - pagination
+        - request_id
+
+    OrchestrationResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            operation_id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [queued, running]
+            estimated_completion:
+              type: string
+              format: date-time
+          required:
+            - operation_id
+            - status
+        request_id:
+          type: string
+      required:
+        - data
+        - request_id
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required:
+            - code
+            - message
+        request_id:
+          type: string
+      required:
+        - error
+        - request_id
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+        pages:
+          type: integer
+          minimum: 0
+      required:
+        - page
+        - limit
+        - total
+        - pages
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

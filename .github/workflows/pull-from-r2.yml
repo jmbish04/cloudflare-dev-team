@@ -1,0 +1,115 @@
+name: Pull Code from R2
+
+on:
+  repository_dispatch:
+    types: [pull-from-r2]
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: 'Project ID to sync'
+        required: true
+        type: string
+      ref:
+        description: 'Git reference (branch/tag)'
+        required: false
+        default: 'main'
+        type: string
+
+jobs:
+  sync-from-r2:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.inputs.ref || github.event.client_payload.ref || 'main' }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure Git
+        run: |
+          git config user.name "MCP Orchestrator Bot"
+          git config user.email "bot@mcp-orchestrator.dev"
+
+      - name: Download code from R2
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET_NAME }}
+          PROJECT_ID: ${{ github.event.inputs.project_id || github.event.client_payload.project_id }}
+        run: |
+          # Install wrangler CLI
+          npm install -g wrangler
+          
+          # Authenticate with Cloudflare
+          echo "$CLOUDFLARE_API_TOKEN" | wrangler auth api-token
+          
+          # Create temporary directory for download
+          mkdir -p ./temp_sync
+          
+          # Download project files from R2
+          echo "Downloading project files for $PROJECT_ID..."
+          
+          # Download the project structure
+          wrangler r2 object get "$R2_BUCKET" "projects/$PROJECT_ID/code/" --local ./temp_sync/ --recursive || echo "No files found"
+          
+          # Check if any files were downloaded
+          if [ "$(ls -A ./temp_sync/)" ]; then
+            echo "Files downloaded successfully"
+            ls -la ./temp_sync/
+          else
+            echo "No files to sync"
+            exit 0
+          fi
+
+      - name: Sync files to repository
+        env:
+          PROJECT_ID: ${{ github.event.inputs.project_id || github.event.client_payload.project_id }}
+        run: |
+          if [ -d "./temp_sync" ] && [ "$(ls -A ./temp_sync)" ]; then
+            # Create project directory in repository
+            mkdir -p "./projects/$PROJECT_ID"
+            
+            # Copy files from temp to project directory
+            cp -r ./temp_sync/* "./projects/$PROJECT_ID/"
+            
+            # Remove temp directory
+            rm -rf ./temp_sync
+            
+            # Add and commit changes
+            git add .
+            
+            if git diff --staged --quiet; then
+              echo "No changes to commit"
+            else
+              git commit -m "Sync code from R2 for project $PROJECT_ID"
+              
+              # Create a pull request branch
+              BRANCH_NAME="sync/$PROJECT_ID/$(date +%Y%m%d-%H%M%S)"
+              git checkout -b "$BRANCH_NAME"
+              git push origin "$BRANCH_NAME"
+              
+              # Create pull request
+              gh pr create \
+                --title "Sync code from R2 for project $PROJECT_ID" \
+                --body "Automated sync of generated code from R2 storage for project \`$PROJECT_ID\`" \
+                --base main \
+                --head "$BRANCH_NAME"
+            fi
+          else
+            echo "No files to sync from R2"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup
+        run: |
+          rm -rf ./temp_sync
