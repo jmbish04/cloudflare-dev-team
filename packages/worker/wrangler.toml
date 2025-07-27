@@ -1,0 +1,13 @@
+name = "mcp-orchestrator"
+main = "./dist/index.js"
+compatibility_date = "2024-04-05"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mcp"
+
+[env.dev]
+bindings = []
+
+[build]
+command = "pnpm --filter worker run build"
