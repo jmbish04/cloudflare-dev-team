@@ -1,0 +1,7 @@
+name: Pull Code from R2
+on: [workflow_dispatch]
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Syncing from R2"
