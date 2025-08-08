@@ -1,7 +1,5 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
-
-const healthSchema = z.object({ status: z.literal('ok') })
+import { healthResponseSchema as healthSchema } from '../../schemas/api'
 
 const route = new Hono()
 route.get('/', c => {
