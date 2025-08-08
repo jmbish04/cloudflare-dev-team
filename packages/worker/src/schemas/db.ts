@@ -11,8 +11,8 @@ export const projectSchema = z.object({
   r2_bucket: z.string(),
   github_repo_url: z.string().optional(),
   google_docs_folder_id: z.string().optional(),
-  created_at: z.string(),
-  updated_at: z.string()
+  created_at: z.string().datetime(),
+  updated_at: z.string().datetime()
 })
 
 export type Project = z.infer<typeof projectSchema>
