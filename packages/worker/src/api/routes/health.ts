@@ -1,9 +1,9 @@
 import { Hono } from 'hono'
-import { healthResponseSchema as healthSchema } from '../../schemas/api'
+import { healthResponseSchema as healthSchema, type HealthResponse } from '../../schemas/api'
 
 const route = new Hono()
 route.get('/', c => {
-  const body = { status: 'ok' } as const
+  const body: HealthResponse = { status: 'ok' }
   const parsed = healthSchema.parse(body)
   return c.json(parsed)
 })

@@ -4,17 +4,29 @@
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "tsc -b",
-    "dev": "wrangler dev",
-    "start": "wrangler dev"
+    "types": "wrangler types",
+    "compile": "tsc -b",
+    "build": "pnpm run types && pnpm run compile",
+    "watch:wrangler": "onchange -i wrangler.toml -- pnpm run types",
+    "dev": "concurrently \"pnpm run watch:wrangler\" \"wrangler dev\"",
+    "start": "wrangler dev",
+    "test": "pnpm run types && vitest run",
+    "test:worker": "pnpm run types && vitest run --environment=miniflare",
+    "migrate": "wrangler d1 migrations apply mcp --local",
+    "predeploy": "pnpm run migrate && pnpm test && pnpm test:worker",
+    "deploy": "wrangler deploy",
+    "postdeploy": "pnpm test && pnpm test:worker"
   },
   "dependencies": {
     "hono": "^3.11.7",
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
+    "onchange": "^7.1.0",
     "typescript": "^5.3.3",
-    "wrangler": "^3.59.0",
-    "@cloudflare/workers-types": "^4.20240404.0"
+    "vitest": "^1.2.2",
+    "vitest-environment-miniflare": "^2.14.4",
+    "wrangler": "^4.28.1"
   }
 }
