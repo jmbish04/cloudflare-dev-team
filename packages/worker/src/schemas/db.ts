@@ -72,7 +72,7 @@ export const TaskSchema = z.object({
   type: TaskTypeSchema.nullable(),
   status: TaskStatusSchema,
   priority: TaskPrioritySchema,
-  dependencies: z.string().nullable(), // JSON array of task IDs
+dependencies: z.string().nullable().transform(val => val ? JSON.parse(val) : []), // JSON array of task IDs
   github_pr_url: z.string().nullable(),
   assignee_agent: z.string().nullable(),
   created_at: z.string(),
