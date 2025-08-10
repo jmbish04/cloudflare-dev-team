@@ -1,8 +1,0 @@
---- a/packages/worker/tsconfig.json
-+++ b/packages/worker/tsconfig.json
-@@ -15,5 +15,5 @@
-    },
-    "include": ["src/**/*"],
--   "exclude": ["node_modules", "dist"]
-+   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
- }
